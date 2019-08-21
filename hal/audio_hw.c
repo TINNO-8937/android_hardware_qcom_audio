@@ -555,6 +555,32 @@ static int get_snd_codec_id(audio_format_t format)
     return id;
 }
 
+/* For nxp smart pa tfa98xx to switch profile */
+enum nxpSmartPAMode {
+    MUSIC_PRO = 0,
+    VOICE_PRO,
+};
+
+int setSpeakerPAProfile(int profile_type)
+{
+    struct mixer_ctl * ctl;
+    const char *mixer_ctl_name = "mono Profile";
+    char *value = NULL;
+    if (profile_type == VOICE_PRO) {
+        value = "VOICE_48000";
+    } else if (profile_type == MUSIC_PRO) {
+        value = "MUSIC_48000";
+    }
+    ALOGI("tfa98xx: set profile[%s]: %s.", mixer_ctl_name, value);
+    ctl = mixer_get_ctl_by_name(adev->mixer, mixer_ctl_name);
+    if(!ctl) {
+        ALOGE("tfa98xx: %s: Could not get ctl for mixer command: %s", __func__, mixer_ctl_name);
+        return -EINVAL;
+    }
+    mixer_ctl_set_enum_by_string(ctl, value);
+    return 0;
+}
+
 int get_snd_card_state(struct audio_device *adev)
 {
     int snd_scard_state;
@@ -699,6 +725,9 @@ int enable_snd_device(struct audio_device *adev,
     }
 
 
+    if (SND_DEVICE_OUT_VOICE_SPEAKER == snd_device)
+        setSpeakerPAProfile(VOICE_PRO);
+
     if (audio_extn_spkr_prot_is_enabled())
          audio_extn_spkr_prot_calib_cancel(adev);
 
@@ -818,6 +847,10 @@ int disable_snd_device(struct audio_device *adev,
                                         ST_EVENT_SND_DEVICE_FREE);
         audio_extn_listen_update_device_status(snd_device,
                                         LISTEN_EVENT_SND_DEVICE_FREE);
+
+        if (SND_DEVICE_OUT_VOICE_SPEAKER == snd_device)
+            setSpeakerPAProfile(MUSIC_PRO);
+
     }
 
     return 0;
@@ -1396,6 +1429,7 @@ int select_devices(struct audio_device *adev, audio_usecase_t uc_id)
         status = platform_switch_voice_call_usecase_route_post(adev->platform,
                                                                out_snd_device,
                                                                in_snd_device);
+
     ALOGD("%s: done",__func__);
 
     return status;
