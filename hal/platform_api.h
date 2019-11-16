@@ -39,6 +39,8 @@ typedef struct {
 void *platform_init(struct audio_device *adev);
 void platform_deinit(void *platform);
 const char *platform_get_snd_device_name(snd_device_t snd_device);
+const char *platform_get_snd_backend_tag(snd_device_t snd_device);
+const char *platform_get_snd_interface_name(snd_device_t snd_device);
 int platform_get_snd_device_name_extn(void *platform, snd_device_t snd_device,
                                       char *device_name);
 void platform_add_backend_name(char *mixer_path, snd_device_t snd_device,
