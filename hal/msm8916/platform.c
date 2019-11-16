@@ -2024,22 +2024,6 @@ const char *platform_get_snd_device_name(snd_device_t snd_device)
         return "";
 }
 
-const char *platform_get_snd_backend_tag(snd_device_t snd_device)
-{
-    if (snd_device >= SND_DEVICE_MIN && snd_device < SND_DEVICE_MAX)
-        return backend_tag_table[snd_device];
-    else
-        return "";
-}
-
-const char *platform_get_snd_interface_name(snd_device_t snd_device)
-{
-    if (snd_device >= SND_DEVICE_MIN && snd_device < SND_DEVICE_MAX)
-        return hw_interface_table[snd_device];
-    else
-        return "";
-}
-
 int platform_get_snd_device_name_extn(void *platform, snd_device_t snd_device,
                                       char *device_name)
 {
