@@ -1520,6 +1520,9 @@ static void set_platform_defaults(struct platform_data * my_data)
     backend_tag_table[SND_DEVICE_OUT_SPEAKER_AND_BT_A2DP] = strdup("speaker-and-bt-a2dp");
     backend_tag_table[SND_DEVICE_OUT_VOICE_SPEAKER_AND_VOICE_HEADPHONES] = strdup("speaker-and-headphones");
     backend_tag_table[SND_DEVICE_OUT_VOICE_SPEAKER_AND_VOICE_ANC_HEADSET] = strdup("speaker-and-headphones");
+    backend_tag_table[SND_DEVICE_OUT_SPEAKER] = strdup("speaker");
+    backend_tag_table[SND_DEVICE_OUT_VOICE_SPEAKER] = strdup("speaker");
+    backend_tag_table[SND_DEVICE_OUT_SPEAKER_AND_HEADPHONES] = strdup("speaker-and-headphones");
 
     hw_interface_table[SND_DEVICE_OUT_HANDSET] = strdup("SLIMBUS_0_RX");
     hw_interface_table[SND_DEVICE_OUT_SPEAKER] = strdup("SLIMBUS_0_RX");
@@ -2734,20 +2737,39 @@ int platform_get_snd_device_name_extn(void *platform, snd_device_t snd_device,
 void platform_add_backend_name(char *mixer_path, snd_device_t snd_device,
                                struct audio_usecase *usecase)
 {
+    const char * suffix = backend_tag_table[snd_device];
+
     if ((snd_device < SND_DEVICE_MIN) || (snd_device >= SND_DEVICE_MAX)) {
         ALOGE("%s: Invalid snd_device = %d", __func__, snd_device);
         return;
     }
 
-    if ((snd_device == SND_DEVICE_OUT_VOICE_SPEAKER_VBAT ||
-        snd_device == SND_DEVICE_OUT_VOICE_SPEAKER_2_VBAT) &&
-        !(usecase->type == VOICE_CALL || usecase->type == VOIP_CALL)) {
-        ALOGI("%s: Not adding vbat speaker device to non voice use cases", __func__);
-        return;
+    if (snd_device < SND_DEVICE_OUT_VOICE_SPEAKER) {
+        if (snd_device != SND_DEVICE_OUT_SPEAKER) {
+            if (snd_device == SND_DEVICE_OUT_SPEAKER_AND_HEADPHONES) {
+                ALOGE("%s-5: snd_device = %d usecase:%d",
+                	__func__, snd_device, usecase->id);
+                backend_tag_table[SND_DEVICE_OUT_SPEAKER_AND_HEADPHONES] =
+                    strdup("speaker-and-headphones");
+            }
+            goto end;
+        }
+    } else {
+        if (snd_device != SND_DEVICE_OUT_VOICE_SPEAKER) {
+        if ((snd_device == SND_DEVICE_OUT_VOICE_SPEAKER_VBAT ||
+            snd_device == SND_DEVICE_OUT_VOICE_SPEAKER_2_VBAT) &&
+            !(usecase->type == VOICE_CALL || usecase->type == VOIP_CALL)) {
+                ALOGI("%s: Not adding vbat speaker device to non voice use cases", __func__);
+                return;
+            }
+        }
     }
 
-    const char * suffix = backend_tag_table[snd_device];
+    ALOGE("%s-4: snd_device = %d usecase:%d", __func__, snd_device, usecase->id);
+    backend_tag_table[SND_DEVICE_OUT_SPEAKER] = strdup("speaker");
+    backend_tag_table[SND_DEVICE_OUT_VOICE_SPEAKER] = strdup("speaker");
 
+end:
     if (suffix != NULL) {
         strlcat(mixer_path, " ", MIXER_PATH_MAX_LENGTH);
         strlcat(mixer_path, suffix, MIXER_PATH_MAX_LENGTH);
